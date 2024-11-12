@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Diddy Party - Enhanced Prototype</title>
+  <title>The Diddy Party - Enhanced Graphics</title>
   <style>
     body {
       margin: 0;
@@ -16,7 +16,10 @@
       overflow: hidden;
     }
     canvas {
-      border: 2px solid #fff;
+      border: 4px solid #fff;
+      border-radius: 10px;
+      background: linear-gradient(to bottom right, #333, #444);
+      box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.2);
     }
   </style>
 </head>
@@ -30,10 +33,10 @@
     canvas.style.width = `${800 * screenScale}px`;
     canvas.style.height = `${600 * screenScale}px`;
 
-    // Player Object
+    // Player Object with enhanced style
     const player = {
       x: 100,
-      y: 100,
+      y: 300,
       width: 40,
       height: 60,
       speed: 5,
@@ -42,21 +45,17 @@
       inventory: []
     };
 
-    // Clue Object
-    const clue = {
-      x: 300,
-      y: 250,
-      width: 40,
-      height: 40,
-      color: 'red',
-      collected: false
-    };
-
-    // Room Management
+    // Rooms with door positions for navigation
     let currentRoom = 0;
     const rooms = [
-      { name: "Entrance Hall", x: 50, y: 50, width: 700, height: 500 },
-      { name: "Library", x: 100, y: 50, width: 600, height: 500 }
+      { name: "Entrance Hall", doors: [{ x: 750, y: 250, width: 50, height: 100, targetRoom: 1 }] },
+      { name: "Library", doors: [{ x: 0, y: 250, width: 50, height: 100, targetRoom: 0 }] }
+    ];
+
+    // Clues for each room
+    const clues = [
+      { x: 300, y: 250, width: 30, height: 30, color: 'yellow', collected: false, room: 0, text: "A torn piece of paper" },
+      { x: 200, y: 200, width: 30, height: 30, color: 'green', collected: false, room: 1, text: "A dusty old key" }
     ];
 
     // Dialogue box
@@ -87,71 +86,84 @@
       player.direction.y = 0;
     });
 
-    // Interaction with the clue
-    function interactWithClue() {
-      if (!clue.collected && player.x < clue.x + clue.width && player.x + player.width > clue.x && player.y < clue.y + clue.height && player.y + player.height > clue.y) {
-        clue.collected = true;
-        player.inventory.push("Mystery Key");
-        dialogueBox.text = "You found a Mystery Key!";
+    // Check if player is near a door to switch rooms
+    function checkDoors() {
+      const room = rooms[currentRoom];
+      for (const door of room.doors) {
+        if (
+          player.x < door.x + door.width &&
+          player.x + player.width > door.x &&
+          player.y < door.y + door.height &&
+          player.y + player.height > door.y
+        ) {
+          currentRoom = door.targetRoom;
+          player.x = door.targetRoom === 0 ? 50 : 700; // Position player near entrance of new room
+          dialogueBox.text = `You entered the ${rooms[currentRoom].name}.`;
+        }
+      }
+    }
+
+    // Interact with clues
+    function interactWithClues() {
+      for (const clue of clues) {
+        if (
+          !clue.collected &&
+          clue.room === currentRoom &&
+          player.x < clue.x + clue.width &&
+          player.x + player.width > clue.x &&
+          player.y < clue.y + clue.height &&
+          player.y + player.height > clue.y
+        ) {
+          clue.collected = true;
+          player.inventory.push(clue.text);
+          dialogueBox.text = `You found a clue: ${clue.text}`;
+        }
       }
     }
 
     // Handle keydown events for desktop
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowUp' || e.key === 'w') {
-        player.direction.y = -1;
-      } else if (e.key === 'ArrowDown' || e.key === 's') {
-        player.direction.y = 1;
-      } else if (e.key === 'ArrowLeft' || e.key === 'a') {
-        player.direction.x = -1;
-      } else if (e.key === 'ArrowRight' || e.key === 'd') {
-        player.direction.x = 1;
-      } else if (e.key === 'e') {
-        interactWithClue();
-      } else if (e.key === 'r') {
-        changeRoom();
-      }
+      if (e.key === 'ArrowUp' || e.key === 'w') player.direction.y = -1;
+      else if (e.key === 'ArrowDown' || e.key === 's') player.direction.y = 1;
+      else if (e.key === 'ArrowLeft' || e.key === 'a') player.direction.x = -1;
+      else if (e.key === 'ArrowRight' || e.key === 'd') player.direction.x = 1;
+      else if (e.key === 'e') interactWithClues();
     });
 
     document.addEventListener('keyup', (e) => {
-      if (['ArrowUp', 'ArrowDown', 'w', 's'].includes(e.key)) {
-        player.direction.y = 0;
-      }
-      if (['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(e.key)) {
-        player.direction.x = 0;
-      }
+      if (['ArrowUp', 'ArrowDown', 'w', 's'].includes(e.key)) player.direction.y = 0;
+      if (['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(e.key)) player.direction.x = 0;
     });
-
-    // Switch room function
-    function changeRoom() {
-      currentRoom = (currentRoom + 1) % rooms.length;
-      player.x = rooms[currentRoom].x + 50;
-      player.y = rooms[currentRoom].y + 50;
-      dialogueBox.text = `You entered the ${rooms[currentRoom].name}.`;
-    }
 
     // Game Loop
     function gameLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Update player position
-      player.x += player.direction.x * player.speed;
-      player.y += player.direction.y * player.speed;
+      // Background for current room
+      ctx.fillStyle = currentRoom === 0 ? '#555' : '#333';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw current room boundaries
+      // Room boundaries and doors
+      const room = rooms[currentRoom];
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
-      const room = rooms[currentRoom];
-      ctx.strokeRect(room.x, room.y, room.width, room.height);
+      ctx.strokeRect(50, 50, 700, 500);
+
+      for (const door of room.doors) {
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(door.x, door.y, door.width, door.height);
+      }
 
       // Draw player
       ctx.fillStyle = player.color;
       ctx.fillRect(player.x, player.y, player.width, player.height);
 
-      // Draw clue if not collected
-      if (!clue.collected && currentRoom === 0) {
-        ctx.fillStyle = clue.color;
-        ctx.fillRect(clue.x, clue.y, clue.width, clue.height);
+      // Draw clues if in current room and not collected
+      for (const clue of clues) {
+        if (!clue.collected && clue.room === currentRoom) {
+          ctx.fillStyle = clue.color;
+          ctx.fillRect(clue.x, clue.y, clue.width, clue.height);
+        }
       }
 
       // Draw Dialogue box
@@ -160,6 +172,11 @@
       ctx.fillStyle = '#000';
       ctx.font = '20px Arial';
       ctx.fillText(dialogueBox.text, dialogueBox.x + 10, dialogueBox.y + 30);
+
+      // Update player position and check for doors
+      player.x += player.direction.x * player.speed;
+      player.y += player.direction.y * player.speed;
+      checkDoors();
 
       requestAnimationFrame(gameLoop);
     }
