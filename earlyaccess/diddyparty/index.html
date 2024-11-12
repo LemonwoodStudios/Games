@@ -1,1 +1,171 @@
-DEVLOG: Website hosted
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Diddy Party - Enhanced Prototype</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #202020;
+      overflow: hidden;
+    }
+    canvas {
+      border: 2px solid #fff;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const screenScale = Math.min(window.innerWidth / 800, window.innerHeight / 600);
+    canvas.style.width = `${800 * screenScale}px`;
+    canvas.style.height = `${600 * screenScale}px`;
+
+    // Player Object
+    const player = {
+      x: 100,
+      y: 100,
+      width: 40,
+      height: 60,
+      speed: 5,
+      color: 'blue',
+      direction: { x: 0, y: 0 },
+      inventory: []
+    };
+
+    // Clue Object
+    const clue = {
+      x: 300,
+      y: 250,
+      width: 40,
+      height: 40,
+      color: 'red',
+      collected: false
+    };
+
+    // Room Management
+    let currentRoom = 0;
+    const rooms = [
+      { name: "Entrance Hall", x: 50, y: 50, width: 700, height: 500 },
+      { name: "Library", x: 100, y: 50, width: 600, height: 500 }
+    ];
+
+    // Dialogue box
+    const dialogueBox = {
+      x: 50,
+      y: 500,
+      width: 700,
+      height: 80,
+      text: ''
+    };
+
+    // Touch Controls for iPad
+    let touchStartX, touchStartY;
+    canvas.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      const touchX = e.touches[0].clientX;
+      const touchY = e.touches[0].clientY;
+      player.direction.x = touchX - touchStartX > 10 ? 1 : touchX - touchStartX < -10 ? -1 : 0;
+      player.direction.y = touchY - touchStartY > 10 ? 1 : touchY - touchStartY < -10 ? -1 : 0;
+    });
+
+    canvas.addEventListener('touchend', () => {
+      player.direction.x = 0;
+      player.direction.y = 0;
+    });
+
+    // Interaction with the clue
+    function interactWithClue() {
+      if (!clue.collected && player.x < clue.x + clue.width && player.x + player.width > clue.x && player.y < clue.y + clue.height && player.y + player.height > clue.y) {
+        clue.collected = true;
+        player.inventory.push("Mystery Key");
+        dialogueBox.text = "You found a Mystery Key!";
+      }
+    }
+
+    // Handle keydown events for desktop
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'w') {
+        player.direction.y = -1;
+      } else if (e.key === 'ArrowDown' || e.key === 's') {
+        player.direction.y = 1;
+      } else if (e.key === 'ArrowLeft' || e.key === 'a') {
+        player.direction.x = -1;
+      } else if (e.key === 'ArrowRight' || e.key === 'd') {
+        player.direction.x = 1;
+      } else if (e.key === 'e') {
+        interactWithClue();
+      } else if (e.key === 'r') {
+        changeRoom();
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (['ArrowUp', 'ArrowDown', 'w', 's'].includes(e.key)) {
+        player.direction.y = 0;
+      }
+      if (['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(e.key)) {
+        player.direction.x = 0;
+      }
+    });
+
+    // Switch room function
+    function changeRoom() {
+      currentRoom = (currentRoom + 1) % rooms.length;
+      player.x = rooms[currentRoom].x + 50;
+      player.y = rooms[currentRoom].y + 50;
+      dialogueBox.text = `You entered the ${rooms[currentRoom].name}.`;
+    }
+
+    // Game Loop
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Update player position
+      player.x += player.direction.x * player.speed;
+      player.y += player.direction.y * player.speed;
+
+      // Draw current room boundaries
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      const room = rooms[currentRoom];
+      ctx.strokeRect(room.x, room.y, room.width, room.height);
+
+      // Draw player
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // Draw clue if not collected
+      if (!clue.collected && currentRoom === 0) {
+        ctx.fillStyle = clue.color;
+        ctx.fillRect(clue.x, clue.y, clue.width, clue.height);
+      }
+
+      // Draw Dialogue box
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(dialogueBox.x, dialogueBox.y, dialogueBox.width, dialogueBox.height);
+      ctx.fillStyle = '#000';
+      ctx.font = '20px Arial';
+      ctx.fillText(dialogueBox.text, dialogueBox.x + 10, dialogueBox.y + 30);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Start the game
+    gameLoop();
+  </script>
+</body>
+</html>
