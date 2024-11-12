@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Diddy Party - Enhanced Graphics</title>
+  <title>The Diddy Party - Enhanced Graphics Prototype</title>
   <style>
     body {
       margin: 0;
@@ -18,7 +18,7 @@
     canvas {
       border: 4px solid #fff;
       border-radius: 10px;
-      background: linear-gradient(to bottom right, #333, #444);
+      background: linear-gradient(to bottom right, #2e2e2e, #444);
       box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.2);
     }
   </style>
@@ -45,7 +45,7 @@
       inventory: []
     };
 
-    // Rooms with door positions for navigation
+    // Rooms with door positions and gradients
     let currentRoom = 0;
     const rooms = [
       { name: "Entrance Hall", doors: [{ x: 750, y: 250, width: 50, height: 100, targetRoom: 1 }] },
@@ -54,8 +54,8 @@
 
     // Clues for each room
     const clues = [
-      { x: 300, y: 250, width: 30, height: 30, color: 'yellow', collected: false, room: 0, text: "A torn piece of paper" },
-      { x: 200, y: 200, width: 30, height: 30, color: 'green', collected: false, room: 1, text: "A dusty old key" }
+      { x: 300, y: 250, width: 30, height: 30, color: 'yellow', collected: false, room: 0, text: "A mysterious artifact" },
+      { x: 200, y: 200, width: 30, height: 30, color: 'green', collected: false, room: 1, text: "An ancient book" }
     ];
 
     // Dialogue box
@@ -97,7 +97,7 @@
           player.y + player.height > door.y
         ) {
           currentRoom = door.targetRoom;
-          player.x = door.targetRoom === 0 ? 50 : 700; // Position player near entrance of new room
+          player.x = door.targetRoom === 0 ? 50 : 700;
           dialogueBox.text = `You entered the ${rooms[currentRoom].name}.`;
         }
       }
@@ -139,34 +139,47 @@
     function gameLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Background for current room
-      ctx.fillStyle = currentRoom === 0 ? '#555' : '#333';
+      // Background for current room with gradient
+      const roomGradient = ctx.createLinearGradient(0, 0, 800, 600);
+      roomGradient.addColorStop(0, currentRoom === 0 ? '#444' : '#333');
+      roomGradient.addColorStop(1, currentRoom === 0 ? '#555' : '#222');
+      ctx.fillStyle = roomGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Room boundaries and doors
+      // Draw room boundaries and enhanced doors
       const room = rooms[currentRoom];
       ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 4;
       ctx.strokeRect(50, 50, 700, 500);
 
       for (const door of room.doors) {
-        ctx.fillStyle = '#8B4513';
+        ctx.fillStyle = 'brown';
         ctx.fillRect(door.x, door.y, door.width, door.height);
+
+        ctx.fillStyle = '#8b5a2b';
+        ctx.fillRect(door.x + 10, door.y + 10, door.width - 20, door.height - 20);
+        ctx.strokeStyle = '#000';
+        ctx.strokeRect(door.x, door.y, door.width, door.height);
       }
 
-      // Draw player
+      // Draw player with shadow
       ctx.fillStyle = player.color;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(player.x, player.y, player.width, player.height);
+      ctx.shadowBlur = 0;
 
       // Draw clues if in current room and not collected
       for (const clue of clues) {
         if (!clue.collected && clue.room === currentRoom) {
           ctx.fillStyle = clue.color;
-          ctx.fillRect(clue.x, clue.y, clue.width, clue.height);
+          ctx.beginPath();
+          ctx.arc(clue.x + clue.width / 2, clue.y + clue.height / 2, clue.width / 2, 0, 2 * Math.PI);
+          ctx.fill();
         }
       }
 
-      // Draw Dialogue box
+      // Draw Dialogue box with styling
       ctx.fillStyle = '#fff';
       ctx.fillRect(dialogueBox.x, dialogueBox.y, dialogueBox.width, dialogueBox.height);
       ctx.fillStyle = '#000';
